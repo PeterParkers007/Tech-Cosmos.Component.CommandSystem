@@ -1,0 +1,19 @@
+{
+  "name": "com.techcosmos.command-system",
+  "version": "1.0.0",
+  "displayName": "TechCosmos Command System",
+  "description": "适用于 Unity 的灵活命令系统，具有通用命令目标和队列管理",
+  "unity": "2022.3",
+  "keywords": [
+    "command",
+    "system",
+    "pattern",
+    "queue",
+    "unity"
+  ],
+  "author": {
+    "name": "Tech-Cosmos",
+    "email": "3427463164@qq.com",
+    "url": "https://www.techcosmos.com"
+  }
+}
