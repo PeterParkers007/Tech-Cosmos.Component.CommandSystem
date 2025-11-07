@@ -1,0 +1,14 @@
+{
+	"name": "TechCosmos.CommandSystem.Runtime",
+    "rootNamespace": "TechCosmos.CommandSystem.Runtime",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
