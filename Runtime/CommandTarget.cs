@@ -90,4 +90,8 @@ namespace TechCosmos.CommandSystem.Runtime
             _actionMap.Remove(actionName);
         }
     }
+    public class CommandTarget : CommandTarget<Monobehaviour>
+    {
+        
+    }
 }
