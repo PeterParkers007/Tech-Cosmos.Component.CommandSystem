@@ -49,11 +49,9 @@ namespace TechCosmos.CommandSystem.Runtime
                     // 检查命令是否还在执行状态（说明它没有自行完成状态更新）
                     if (_currentCommand.Status == CommandStatus.Executing)
                     {
-                        // 对于没有自行更新状态的命令，假设它立即完成
-                        if (_currentCommand is IStatusUpdatable updatable2)
-                        {
-                            updatable2.UpdateStatus(CommandStatus.Completed);
-                        }
+                        // 只记录警告，不强制修改状态
+    Debug.LogWarning($"Command {_currentCommand.GetType().Name} is still in Executing status after Execute() call. " +
+                    "The command should update its own status to Completed/Failed/Cancelled.");
                     }
 
                     _currentCommand = null;
