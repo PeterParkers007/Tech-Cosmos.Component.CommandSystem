@@ -2,7 +2,7 @@
   "name": "com.techcosmos.command-system",
   "version": "1.0.0",
   "displayName": "TechCosmos Command System",
-  "description": "ÊÊÓÃÓÚ Unity µÄÁé»îÃüÁîÏµÍ³£¬¾ßÓĞÍ¨ÓÃÃüÁîÄ¿±êºÍ¶ÓÁĞ¹ÜÀí",
+  "description": "é€‚ç”¨äº Unity çš„çµæ´»å‘½ä»¤ç³»ç»Ÿï¼Œå…·æœ‰é€šç”¨å‘½ä»¤ç›®æ ‡å’Œé˜Ÿåˆ—ç®¡ç†",
   "unity": "2022.3",
   "keywords": [
     "command",
