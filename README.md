@@ -6,15 +6,19 @@
 
 ## 功能特性
 
-**🎯 泛型支持**：支持任意类型的命令目标
+**🚀 完整生命周期管理** - 支持命令状态跟踪（Pending、Executing、Completed、Failed、Cancelled）
 
-**📋 命令队列**：内置命令队列管理，支持顺序执行
+**🎯 泛型支持** - 支持任意类型的命令目标
 
-**⚡ 即时执行**：支持立即执行或排队执行命令
+**📋 智能命令队列** - 基于优先级的命令排序和执行
 
-**🎮 易于扩展**：轻松创建新的命令类型
+**⚡ 多模式执行** - 支持立即执行、排队执行、立即打断执行
 
-**🔄 生命周期管理**：自动管理命令队列和清理
+**🔄 命令取消机制** - 支持取消正在执行的命令
+
+**🎮 易于扩展** - 基类支持快速创建自定义命令
+
+**🔗 命令组合** - 支持复合命令、条件命令等高级特性
 
 ## 安装
 
@@ -37,15 +41,20 @@ public class Unit : CommandTarget<Unit>
 {
     private void Start()
     {
-        // 绑定命令执行逻辑
+        // 绑定基础命令执行逻辑
         OnMove += MoveToPosition;
         OnAttack += AttackTarget;
         OnStop += StopActions;
+        
+        // 注册自定义动作
+        RegisterAction<ResourceNode>("Gather", GatherResource);
+        RegisterAction("Dance", Dance);
     }
 
     private void MoveToPosition(Vector3 position)
     {
         // 实现移动逻辑
+        transform.position = position;
         Debug.Log($"Moving to {position}");
     }
 
@@ -60,6 +69,16 @@ public class Unit : CommandTarget<Unit>
         // 实现停止逻辑
         Debug.Log("Stopping all actions");
     }
+    
+    private void GatherResource(ResourceNode node)
+    {
+        Debug.Log($"Gathering from {node.name}");
+    }
+    
+    private void Dance()
+    {
+        Debug.Log("Dancing!");
+    }
 }
 ```
 ### 2. 使用命令系统
@@ -68,28 +87,39 @@ public class GameController : MonoBehaviour
 {
     public Unit playerUnit;
     public Unit enemyUnit;
+    public ResourceNode resourceNode;
 
     private void Update()
     {
         if (Input.GetMouseButtonDown(0))
         {
-            // 移动命令
+            // 移动命令 - 立即执行
             var moveCommand = new MoveCommand<Unit>(playerUnit, GetMouseWorldPosition());
             CommandManager<Unit>.Instance.ExecuteCommand(playerUnit, moveCommand);
         }
 
         if (Input.GetMouseButtonDown(1))
         {
-            // 攻击命令
-            var attackCommand = new AttackCommand<Unit>(playerUnit, enemyUnit);
+            // 攻击命令 - 排队执行
+            var attackCommand = new AttackCommand<Unit>(playerUnit, enemyUnit, CommandPriority.High);
             CommandManager<Unit>.Instance.EnqueueCommand(playerUnit, attackCommand);
         }
 
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            // 停止命令
+            // 停止命令 - 高优先级立即执行
             var stopCommand = new StopCommand<Unit>(playerUnit);
-            CommandManager<Unit>.Instance.ExecuteCommand(playerUnit, stopCommand);
+            CommandManager<Unit>.Instance.ExecuteImmediateCommand(playerUnit, stopCommand);
+        }
+        
+        if (Input.GetKeyDown(KeyCode.G))
+        {
+            // 使用扩展方法创建条件命令
+            var gatherCommand = new GatherCommand<Unit>(playerUnit, resourceNode)
+                .When(() => playerUnit.HasTools) // HasTools 属性未定义
+                .WithPriority(CommandPriority.Normal);
+                
+            CommandManager<Unit>.Instance.EnqueueCommand(playerUnit, gatherCommand);
         }
     }
 
@@ -118,94 +148,225 @@ public class UnitCommandManager : CommandManager<Unit>
 ```
 ## 核心组件
 
-### ICommand 接口
-**所有命令都需要实现的基础接口：**
+### ICommand 接口体系
+**完整的命令接口生态系统：**
 ```csharp 
 public interface ICommand
 {
     bool CanExecute();
     void Execute();
+    CommandStatus Status { get; }
+    Action<CommandStatus> OnStatusChanged { get; set; }
+}
+
+public interface ICancellableCommand : ICommand
+{
+    void Cancel();
+    bool CanCancel { get; }
+}
+
+public interface IPrioritizedCommand
+{
+    CommandPriority Priority { get; set; }
 }
 ```
 ### 内置命令类型
 
-- **MoveCommand**：移动命令
-- **AttackCommand**：攻击命令
-- **StopCommand**：停止命令
+- **MoveCommand** - 移动命令，支持优先级配置
+
+- **AttackCommand** - 攻击命令，完整的异常处理
+
+- **StopCommand** - 停止命令，默认高优先级
+
+- **CompositeCommand** - 组合命令，顺序执行多个命令
+
+- **ConditionalCommand** - 条件命令，满足条件时执行
 
 ### CommandManager
 **单例命令管理器，负责：**
 
-- 执行即时命令
+- 执行即时命令 (ExecuteCommand)
 
-- 管理命令队列
+- 排队执行命令 (EnqueueCommand)
 
-- 清理单位命令
+- 立即打断执行 (ExecuteImmediateCommand)
+
+- 取消命令 (CancelCurrentCommand, CancelAllCommands)
+
+- 队列状态监控 (ObserverUpdate)
 
 ### CommandQueue
-**命令队列，支持：**
+**智能命令队列，支持：**
 
-- 顺序执行命令
+- 基于优先级的命令排序
 
-- 队列清理
+- 自动清理已完成/失败命令
 
-- 状态检查
+- 当前命令取消支持
+
+- 队列状态调试信息
 
 ### CommandTarget
-**命令目标基类，提供：**
+**可扩展的命令目标基类，提供：**
 
-- 命令事件绑定
+- 内置基础动作 (Move、Attack、Stop)
+
+- 动态动作注册系统 (RegisterAction)
+
+- 类型安全的动作执行 (ExecuteAction<T>)
 
 - 泛型类型支持
 
-- 统一的命令接口
+## 🛠️ 扩展自定义命令
 
-## 扩展自定义命令
-
-**创建新的命令类型：**
-
+**方式1：继承 BaseCommand（推荐）**
 ```csharp
-public class CustomCommand<T> : ICommand
+public class ResourceNode 
 {
-    private CommandTarget<T> _commandTarget;
-    private string _message;
+    public bool HasResources => true;
+    public string name = "ResourceNode";
+}
 
-    public CustomCommand(CommandTarget<T> commandTarget, string message)
+public class GatherCommand<T> : BaseCommand<T>
+{
+    private CommandTarget<T> _gatherer;
+    private ResourceNode _resourceNode;
+
+    public GatherCommand(CommandTarget<T> gatherer, ResourceNode node)
     {
-        _commandTarget = commandTarget;
-        _message = message;
+        _gatherer = gatherer;
+        _resourceNode = node;
     }
 
-    public bool CanExecute() => _commandTarget != null;
+    public override bool CanExecute() => 
+        base.CanExecute() && _gatherer != null && _resourceNode != null && _resourceNode.HasResources;
 
-    public void Execute()
+    public override void Execute()
     {
-        if (CanExecute())
+        if (!CanExecute())
         {
-            Debug.Log(_message);
-            // 执行自定义逻辑
+            OnExecuteFailed();
+            return;
         }
+
+        OnExecuteStart();
+        
+        try
+        {
+            if (!_isCancelled)
+            {
+                _gatherer.ExecuteAction("Gather", _resourceNode);
+                OnExecuteComplete();
+            }
+            else
+            {
+                OnExecuteCancelled();
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"Gather command failed: {ex.Message}");
+            OnExecuteFailed();
+        }
+    }
+}
+```
+**方式2：使用扩展方法创建复杂命令**
+```csharp
+// 链式命令组合
+var patrolCommand = new MoveCommand<Unit>(unit, pointA)
+    .Then(new MoveCommand<Unit>(unit, pointB))
+    .Then(new AttackCommand<Unit>(unit, enemy))
+    .WithPriority(CommandPriority.Normal);
+
+// 条件命令
+var safeAttack = new AttackCommand<Unit>(unit, enemy)
+    .When(() => unit.Health > 0.3f && unit.HasAmmo); // Health、HasAmmo 属性未定义
+```
+
+## ⚡ 高级用法
+### 命令状态监听
+```csharp
+var command = new MoveCommand<Unit>(unit, position);
+command.OnStatusChanged += (status) =>
+{
+    switch (status)
+    {
+        case CommandStatus.Completed:
+            Debug.Log("Move command completed successfully");
+            break;
+        case CommandStatus.Failed:
+            Debug.LogError("Move command failed");
+            break;
+        case CommandStatus.Cancelled:
+            Debug.Log("Move command was cancelled");
+            break;
+    }
+};
+```
+### 自定义 CommandTarget 动作
+```csharp
+public class AdvancedUnit : CommandTarget<AdvancedUnit>
+{
+    private void Start()
+    {
+        RegisterAction<Vector3, float>("MoveSmooth", MoveSmoothly);
+        RegisterAction<string>("PlayAnimation", PlayAnimation);
+    }
+    
+    private void MoveSmoothly(Vector3 position, float duration)
+    {
+        // 平滑移动实现
+        StartCoroutine(MoveCoroutine(position, duration));
+    }
+    
+    private void PlayAnimation(string animationName)
+    {
+        // 动画播放逻辑
+        GetComponent<Animator>().Play(animationName);
     }
 }
 ```
 ## 最佳实践
 
-1. **即时执行 vs 队列执行：**
-- 使用 ExecuteCommand() 立即执行关键命令
+1. **执行模式选择**
+- ExecuteCommand() - 立即执行关键命令（移动、停止）
 
-- 使用 EnqueueCommand() 对非关键命令进行排队
+- EnqueueCommand() - 排队执行非关键命令（采集、建造）
 
-2. **内存管理：**
+- ExecuteImmediateCommand() - 打断当前命令执行紧急命令（躲避、紧急停止）
+
+2. **优先级配置**
+- Low - 采集、建造等后台任务
+
+- Normal - 移动、工作等常规命令
+
+- High - 战斗、技能释放等重要命令
+
+- Immediate - 紧急躲避、强制停止等关键命令
+
+3. **内存管理**
 - 及时调用 ClearUnitCommands() 清理不再需要的命令
 
-- 在对象销毁时清理相关命令
+- 在对象销毁时调用 CancelAllCommands() 取消相关命令
 
-3. **错误处理：**
-- 始终检查 CanExecute() before execution
+- 使用命令状态事件进行资源清理
 
-- 处理命令执行失败的情况
+4. **错误处理**
+- 始终在 Execute() 方法中使用 try-catch 块
+
+- 通过 OnStatusChanged 事件监听命令执行状态
+
+- 在 CanExecute() 中进行前置条件检查
+
+5. **性能优化**
+- 避免在每帧创建大量命令对象
+
+- 使用命令队列管理批量命令
+
+- 合理使用命令优先级减少不必要的命令打断
 
 ---
 
 ## 许可证
-MIT License - 详见 [LICENSE](https://github.com/techcosmos/command-system/blob/main/LICENSE) 文件。
+MIT License - 详见 [LICENSE](https://github.com/PeterParkers007/Tech-Cosmos.Component.CommandSystem/blob/main/LICENSE) 文件。
