@@ -71,15 +71,43 @@ namespace TechCosmos.CommandSystem.Runtime.Command
 
         private void OnSubCommandStatusChanged(CommandStatus status)
         {
-            if (status == CommandStatus.Completed)
+            // 安全检查：确保在有效范围内且没有被取消
+            if (_currentIndex < 0 || _currentIndex >= _commands.Count || _isCancelled)
+                return;
+            
+            // 验证当前命令确实是触发状态变化的命令
+            var triggeringCommand = _commands[_currentIndex];
+            if (triggeringCommand.Status != status)
+                return;
+
+            switch (status)
             {
-                // 当前子命令完成，执行下一个
-                ExecuteNextCommand();
-            }
-            else if (status == CommandStatus.Failed)
-            {
-                // 子命令失败，整个组合命令失败
-                OnExecuteFailed();
+                case CommandStatus.Completed:
+                    // 当前子命令完成，执行下一个
+                    ExecuteNextCommand();
+                    break;
+                    
+                case CommandStatus.Failed:
+                    // 子命令失败，整个组合命令失败
+                    OnExecuteFailed();
+                    break;
+                    
+                case CommandStatus.Cancelled:
+                    // 子命令被取消，整个组合命令也被取消
+                    OnExecuteCancelled();
+                    break;
+                    
+                case CommandStatus.Executing:
+                    // 子命令开始执行，不需要特殊处理
+                    break;
+                    
+                case CommandStatus.Pending:
+                    // 不应该发生，但忽略即可
+                    break;
+                    
+                default:
+                    Debug.LogWarning($"Unexpected command status: {status}");
+                    break;
             }
         }
 
