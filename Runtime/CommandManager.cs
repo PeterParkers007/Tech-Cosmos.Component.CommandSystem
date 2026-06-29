@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace TechCosmos.CommandSystem.Runtime
 {
-    public abstract class CommandManager : MonoBehaviour
+    public class CommandManager : MonoBehaviour
     {
         private static CommandManager instance;
         public static CommandManager Instance => instance;
@@ -47,7 +47,7 @@ namespace TechCosmos.CommandSystem.Runtime
             _unitCommandQueues[unit].Enqueue(command);
         }
 
-        // ÐÂÔö·½·¨
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         public virtual void ExecuteImmediateCommand(ICommandTarget unit, ICommand command)
         {
             if (!_unitCommandQueues.ContainsKey(unit))
