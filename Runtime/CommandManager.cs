@@ -4,12 +4,12 @@ using UnityEngine;
 
 namespace TechCosmos.CommandSystem.Runtime
 {
-    public abstract class CommandManager<T> : MonoBehaviour
+    public abstract class CommandManager : MonoBehaviour
     {
-        private static CommandManager<T> instance;
-        public static CommandManager<T> Instance => instance;
+        private static CommandManager instance;
+        public static CommandManager Instance => instance;
 
-        private Dictionary<CommandTarget<T>, CommandQueue> _unitCommandQueues = new Dictionary<CommandTarget<T>, CommandQueue>();
+        private Dictionary<ICommandTarget, CommandQueue> _unitCommandQueues = new Dictionary<ICommandTarget, CommandQueue>();
 
         protected virtual void Awake()
         {
@@ -24,7 +24,7 @@ namespace TechCosmos.CommandSystem.Runtime
             }
         }
 
-        public virtual void ExecuteCommand(CommandTarget<T> unit, ICommand command)
+        public virtual void ExecuteCommand(ICommandTarget unit, ICommand command)
         {
             if (!_unitCommandQueues.ContainsKey(unit))
             {
@@ -37,7 +37,7 @@ namespace TechCosmos.CommandSystem.Runtime
             }
         }
 
-        public virtual void EnqueueCommand(CommandTarget<T> unit, ICommand command)
+        public virtual void EnqueueCommand(ICommandTarget unit, ICommand command)
         {
             if (!_unitCommandQueues.ContainsKey(unit))
             {
@@ -48,7 +48,7 @@ namespace TechCosmos.CommandSystem.Runtime
         }
 
         // 新增方法
-        public virtual void ExecuteImmediateCommand(CommandTarget<T> unit, ICommand command)
+        public virtual void ExecuteImmediateCommand(ICommandTarget unit, ICommand command)
         {
             if (!_unitCommandQueues.ContainsKey(unit))
             {
@@ -63,7 +63,7 @@ namespace TechCosmos.CommandSystem.Runtime
             }
         }
 
-        public virtual void CancelAllCommands(CommandTarget<T> unit)
+        public virtual void CancelAllCommands(ICommandTarget unit)
         {
             if (_unitCommandQueues.ContainsKey(unit))
             {
@@ -71,7 +71,7 @@ namespace TechCosmos.CommandSystem.Runtime
             }
         }
 
-        public virtual void CancelCurrentCommand(CommandTarget<T> unit)
+        public virtual void CancelCurrentCommand(ICommandTarget unit)
         {
             if (_unitCommandQueues.ContainsKey(unit))
             {
@@ -87,7 +87,7 @@ namespace TechCosmos.CommandSystem.Runtime
             }
         }
 
-        public virtual void ClearUnitCommands(CommandTarget<T> unit)
+        public virtual void ClearUnitCommands(ICommandTarget unit)
         {
             if (_unitCommandQueues.ContainsKey(unit))
             {
